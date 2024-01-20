@@ -1,0 +1,10 @@
+zoneId: '-03:00'
+database:
+    username: 'postgres'
+    password: 'postgres'
+    host: 'localhost'
+    port: 5432
+    database: 'march7th'
+discord:
+    token: 'TOKEN-HERE'
+    birthdayRoleId: 00000000000
