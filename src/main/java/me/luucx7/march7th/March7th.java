@@ -16,7 +16,7 @@ import java.io.IOException;
 public class March7th {
 
     @Getter
-    private static final String Version = "1.0.0-BETA";
+    private static final String Version = "1.0.1-BETA";
 
     @Getter
     private static DiscordApi discordApi;
