@@ -3,6 +3,7 @@ package me.luucx7.march7th;
 import lombok.Getter;
 import me.luucx7.march7th.database.DatabaseManager;
 import me.luucx7.march7th.discord.commands.AboutCommand;
+import me.luucx7.march7th.discord.commands.CheckBirthdayCommand;
 import me.luucx7.march7th.discord.commands.set_own_birthday.SetBirthdayCommand;
 import me.luucx7.march7th.discord.services.BirthdayService;
 import me.luucx7.march7th.settings.Settings;
@@ -43,6 +44,7 @@ public class March7th {
                 .join();
 
         discordApi.addListener(new SetBirthdayCommand(discordApi));
+        discordApi.addListener(new CheckBirthdayCommand(discordApi));
         discordApi.addListener(new AboutCommand(discordApi));
 
         BirthdayService.scheduleBirthdayTask();
