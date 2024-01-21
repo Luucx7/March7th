@@ -36,7 +36,7 @@ public class AboutCommand implements SlashCommandCreateListener {
                 .setColor(Color.PINK)
                 .setTitle("7 de Março")
                 .setDescription("Um bot para dar um cargo especial aos aniversariantes do dia!")
-                .addField("GitHub", "Em breve...")
+                .addField("GitHub", "https://github.com/Luucx7/March7th")
                 .addInlineField("Autor", "nier.automata")
                 .addInlineField("Versão", March7th.getVersion())
                 .setThumbnail(MarchImages.MARCH_PROUD.getUrl());
