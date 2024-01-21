@@ -19,14 +19,9 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class BirthdayService {
-
-    public static LinkedHashMap<Long, BirthdayInformation> setBirthdayInteractions = new LinkedHashMap<Long, BirthdayInformation>();
 
     public static void scheduleBirthdayTask() {
         MarchSettings settings = Settings.get();
@@ -153,7 +148,7 @@ public class BirthdayService {
         EmbedBuilder builder = new EmbedBuilder()
                 .setTitle("Aniversário")
                 .setColor(Color.RED)
-                .setThumbnail("https://ih1.redbubble.net/image.5009114667.2495/bg,f8f8f8-flat,750x,075,f-pad,750x1000,f8f8f8.jpg")
+                .setThumbnail(MarchImages.MARCH_SORRY.getUrl())
                 .setDescription("Ocorreu um erro. Por favor, tente novamente mais tarde >:");
 
         interaction.createImmediateResponder()
