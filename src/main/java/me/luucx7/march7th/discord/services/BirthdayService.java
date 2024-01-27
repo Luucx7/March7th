@@ -8,6 +8,8 @@ import me.luucx7.march7th.settings.model.MarchSettings;
 import me.luucx7.march7th.utils.DateUtils;
 import me.luucx7.march7th.utils.MarchImages;
 import org.javacord.api.DiscordApi;
+import org.javacord.api.entity.channel.Channel;
+import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.user.User;
@@ -31,12 +33,12 @@ public class BirthdayService {
         Calendar calendar = Calendar.getInstance(timeZone);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 5);
+        calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
         long initialDelay = calendar.getTimeInMillis() - System.currentTimeMillis();
         if (initialDelay < 0) {
-            // If the current time is already past 00:00 GMT -3, schedule it for the next day
+            // If the current time is already past 00:00, schedule it for the next day
             initialDelay += TimeUnit.DAYS.toMillis(1);
         }
 
@@ -142,6 +144,29 @@ public class BirthdayService {
         for (Long userId : userIds) {
             giveBirthdayRole(userId);
         }
+
+        long usersInBirthday = userIds.size();
+        if (usersInBirthday == 0) return;
+
+        MarchSettings settings = Settings.get();
+
+        Optional<Channel> channelOptional = March7th.getDiscordApi().getChannelById(settings.getDiscord().getBirthdayMessageChannelId());
+        if (channelOptional.isEmpty()) {
+            System.out.println("Tentativa de enviar mensagem de aniversário no canal " + settings.getDiscord().getBirthdayMessageChannelId() + " falhou pois o mesmo não existe.");
+            return;
+        }
+
+        Channel channel = channelOptional.get();
+        if (channel.asServerTextChannel().isEmpty()) {
+            System.out.println("Tentativa de enviar mensagem de aniversário no canal " + settings.getDiscord().getBirthdayMessageChannelId() + " falhou pois o mesmo era de um tipo desconhecido.");
+            return;
+        }
+
+        String message = settings.getDiscord().getBirthdayMessage(day, month, userIds);
+        if (message.isEmpty()) return;
+
+        ServerTextChannel textChannel = channel.asServerTextChannel().get();
+        textChannel.sendMessage(message).get();
     }
 
     public static void genericErrorMessage(MessageComponentInteraction interaction) {

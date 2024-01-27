@@ -8,3 +8,9 @@ database:
 discord:
     token: 'TOKEN-HERE'
     birthdayRoleId: 00000000000
+    birthdayMessageChannelId: 00000000000
+    march7th_special: ''
+    oneBirthdayMessages:
+        - ''
+    multipleBirthdayMessages:
+        - ''
