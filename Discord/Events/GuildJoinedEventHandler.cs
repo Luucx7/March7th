@@ -99,7 +99,7 @@ namespace Discord.Events
             await guild.DownloadUsersAsync();
 
             List<ulong> usersIds = guild.Users.Where(u => !u.IsBot).Select((u) => u.Id).ToList();
-            await userRepo.SyncServerMembers(guild.Id, usersIds);
+            await serverRepository.SyncServerMembers(guild.Id, usersIds);
             guild.PurgeUserCache();
 
             await serverRepository.ServerReady(guild.Id);
