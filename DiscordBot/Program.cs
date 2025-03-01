@@ -65,7 +65,7 @@ namespace DiscordBot
                     services.AddSingleton<InteractionHandlingService>();
 
                     // Adicionando os eventos
-                    services.AddSingleton<GuildJoinedEventHandler>();
+                    EventHandlerService.RegisterServices(services);
 
                     // Configuração de IHostedService
                     services.AddHostedService<DiscordStartupService>(); // Registrando o DiscordStartupService como IHostedService

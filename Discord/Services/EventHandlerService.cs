@@ -34,7 +34,16 @@ namespace Discord.Services
             GuildJoinedEventHandler guildJoined = _services.GetRequiredService<GuildJoinedEventHandler>();
              _discord.JoinedGuild += guildJoined.OnGuildJoinedAsync;
 
+            UserJoinedEventHandler userJoined = _services.GetRequiredService<UserJoinedEventHandler>();
+            _discord.UserJoined += userJoined.OnUserJoinedAsync;
+
             return Task.CompletedTask;
+        }
+
+        public static void RegisterServices(IServiceCollection services)
+        {
+            services.AddSingleton<GuildJoinedEventHandler>();
+            services.AddSingleton<UserJoinedEventHandler>();
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

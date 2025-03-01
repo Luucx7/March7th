@@ -16,7 +16,6 @@ namespace Discord.Events
 {
     public class GuildJoinedEventHandler
     {
-        private string LOG_PREFIX = "[GUILD_JOIN]";
         private readonly DiscordSocketClient _discordSocket;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<GuildJoinedEventHandler> _logger;
@@ -93,7 +92,6 @@ namespace Discord.Events
 
         private async Task SyncGuildMembers(SocketGuild guild, IServiceScope scope)
         {
-            UsersRepository userRepo = scope.ServiceProvider.GetRequiredService<UsersRepository>();
             ServerRepository serverRepository = scope.ServiceProvider.GetRequiredService<ServerRepository>();
 
             await guild.DownloadUsersAsync();
