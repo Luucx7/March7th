@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Formats.Asn1.AsnWriter;
 
-namespace Discord.Events
+namespace Discord.Events.Guild
 {
     public class GuildJoinedEventHandler
     {
@@ -46,7 +46,7 @@ namespace Discord.Events
                     }
                 } catch(Exception ex)
                 {
-                    _logger.LogError(ex.Message);
+                    _logger.LogError(ex, "Error processing guild join event at guild {guild_id}", guild.Id);
                 }
             });
 

@@ -1,4 +1,5 @@
-﻿using Discord.Events;
+﻿using Discord.Events.Guild;
+using Discord.Events.User;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,8 +35,14 @@ namespace Discord.Services
             GuildJoinedEventHandler guildJoined = _services.GetRequiredService<GuildJoinedEventHandler>();
              _discord.JoinedGuild += guildJoined.OnGuildJoinedAsync;
 
+            GuildLeftEventHandler guildLeft = _services.GetRequiredService<GuildLeftEventHandler>();
+            _discord.LeftGuild += guildLeft.OnGuildLeftAsync;
+
             UserJoinedEventHandler userJoined = _services.GetRequiredService<UserJoinedEventHandler>();
             _discord.UserJoined += userJoined.OnUserJoinedAsync;
+
+            UserLeftEventHandler userLeft = _services.GetRequiredService<UserLeftEventHandler>();
+            _discord.UserLeft += userLeft.OnUserLeftAsync;
 
             return Task.CompletedTask;
         }
@@ -43,7 +50,9 @@ namespace Discord.Services
         public static void RegisterServices(IServiceCollection services)
         {
             services.AddSingleton<GuildJoinedEventHandler>();
+            services.AddSingleton<GuildLeftEventHandler>();
             services.AddSingleton<UserJoinedEventHandler>();
+            services.AddSingleton<UserLeftEventHandler>();
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
