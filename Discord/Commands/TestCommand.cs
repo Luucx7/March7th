@@ -1,5 +1,7 @@
 ﻿using Discord.Interactions;
+using Discord.WebSocket;
 using Infrastructure;
+using Infrastructure.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,10 +29,15 @@ namespace Discord.Commands
 
             var scope = this._serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<MarchDbContext>();
+            var socket = scope.ServiceProvider.GetRequiredService<DiscordSocketClient>();
 
-            var servers = await dbContext.Servers.ToListAsync();
+            List<ulong> mutualServers = await dbContext.ServerUsers.Where((su) => su.user_id == userId).Select((su) => su.server_id).ToListAsync();
 
-            await RespondAsync($"oiii {servers.Count}");
+            List<SocketGuild> guilds = socket.Guilds.Where((g) => mutualServers.Contains(g.Id)).ToList();
+
+            string servers = string.Join(" - ", guilds.Select((g) => g.Name));
+
+            await RespondAsync($"{servers}");
         }
     }
 }
