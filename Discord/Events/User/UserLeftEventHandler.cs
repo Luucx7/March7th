@@ -29,6 +29,8 @@ namespace Discord.Events.User
         {
             Task.Run(async () =>
             {
+                if (user.IsBot) return; // Bots don't have birthdays... or do they?
+
                 using IServiceScope scope = _serviceProvider.CreateScope();
                 MarchDbContext dbContext = scope.ServiceProvider.GetRequiredService<MarchDbContext>();
 

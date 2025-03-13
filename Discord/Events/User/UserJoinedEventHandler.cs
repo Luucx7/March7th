@@ -32,6 +32,8 @@ namespace Discord.Events.User
         {
             Task.Run(async() =>
             {
+                if (guildUser.IsBot) return;
+
                 using IServiceScope scope = _serviceProvider.CreateScope();
                 MarchDbContext dbContext = scope.ServiceProvider.GetRequiredService<MarchDbContext>();
 
