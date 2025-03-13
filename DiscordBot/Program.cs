@@ -9,6 +9,7 @@ using Infrastructure.Repository;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace DiscordBot
 {
@@ -16,16 +17,20 @@ namespace DiscordBot
     {
         static async Task Main(string[] args)
         {
+            var logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console() 
+                .WriteTo.Debug()
+                .WriteTo.File("logs/app.log")
+                .CreateLogger();
+
             // Criação do host com configuração de DI
             var host = Host.CreateDefaultBuilder(args)
+                .UseSerilog(logger)
                 .ConfigureServices((hostContext, services) =>
                 {
                     // Configuração do logger
-                    services.AddLogging(builder =>
-                    {
-                        builder.AddConsole();
-                        builder.SetMinimumLevel(LogLevel.Information);
-                    });
+                    services.AddLogging();
 
                     ConfigurationManager configurationManager = new();
 
