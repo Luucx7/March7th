@@ -37,10 +37,12 @@ namespace DiscordBot
                     services.AddSingleton(configurationManager); // Gerenciador de configuração
                     services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(configurationManager.ConfigurationRoot);
                     
+                    // Database 
                     services.AddScoped<MarchDbContext>();
                     services.AddScoped<UsersRepository>();
                     services.AddScoped<ServerRepository>();
 
+                    // Socket
                     services.AddSingleton<DiscordSocketConfig>(new DiscordSocketConfig 
                     { 
                         GatewayIntents = Discord.GatewayIntents.All,
@@ -68,6 +70,9 @@ namespace DiscordBot
 
                     // Registrando o InteractionHandlingService como Singleton
                     services.AddSingleton<InteractionHandlingService>();
+
+                    // Services
+                    services.AddScoped<UserBirthdayService>();
 
                     // Adicionando os eventos
                     EventHandlerService.RegisterServices(services);

@@ -24,6 +24,9 @@ namespace Infrastructure.Entity
         [Required]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTime birthday_updated_at { get; set; }
+        [Required]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public short birthday_updated_amount { get; set; }
 
         public virtual ICollection<ServerUserEntity> UserServers { get; set; } = new List<ServerUserEntity>();
     }

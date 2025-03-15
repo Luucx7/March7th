@@ -28,13 +28,28 @@ namespace Discord.Commands
             if (_configurationManager.DiscordConfiguration.Owner == userId)
             {
                 _logger.LogWarning("Bot shutdown requested by {user_id}", userId);
-                await RespondAsync("Shutting down...", ephemeral: true);
+
+                var embed = new EmbedBuilder()
+                    .WithTitle("Hora de dormir")
+                    .WithDescription("Encerrando o bot...")
+                    .WithColor(Color.DarkRed)
+                    .WithThumbnailUrl("https://github.com/Luucx7/temp-repo/blob/main/march-sleeping.png?raw=true")
+                    .Build();
+
+                await RespondAsync(embed: embed);
 
                 _lifecycleService.StopApplication();
             } else
             {
                 _logger.LogWarning("The user {user_id} tried to request the bot shutdown, but did not had permission.", userId);
-                await RespondAsync("Only the bot owner use this command.", ephemeral: true);
+
+                var embed = new EmbedBuilder()
+                    .WithThumbnailUrl("https://github.com/Luucx7/temp-repo/blob/main/march-angry.png?raw=true")
+                    .WithColor(Color.Red)
+                    .WithDescription("Apenas o dono do bot pode realizar esta ação")
+                    .Build();
+
+                await RespondAsync(embed: embed);
             }
         }
     }
