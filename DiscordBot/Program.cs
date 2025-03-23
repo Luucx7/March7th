@@ -18,7 +18,7 @@ namespace DiscordBot
         static async Task Main(string[] args)
         {
             var logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
+                .MinimumLevel.Verbose()
                 .WriteTo.Console() 
                 .WriteTo.Debug()
                 .WriteTo.File("logs/app.log")

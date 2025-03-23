@@ -2,16 +2,9 @@
 using Discord.Services;
 using Infrastructure;
 using Infrastructure.Entity;
-using Infrastructure.Repository;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
+using System.Collections.Concurrent;
 
 namespace Discord.Commands
 {
@@ -21,8 +14,7 @@ namespace Discord.Commands
         private readonly IServiceProvider _serviceProvider;
         private readonly UserBirthdayService _userBirthdayService;
 
-        private short? Day { get; set; }
-        private short? Month { get; set; }
+        private static readonly ConcurrentDictionary<ulong, ConcurrentDictionary<Guid, SetBirthdayInteraction>> SetBirthdayInteractions = [];
 
         public SetBirthdayCommand(UserBirthdayService usersRepository, IServiceProvider serviceProvider, ILogger<SetBirthdayCommand> logger)
         {
@@ -31,7 +23,7 @@ namespace Discord.Commands
             this._userBirthdayService = usersRepository;
         }
 
-        [SlashCommand("aniversario", "Define seu aniversário",  true, Interactions.RunMode.Async)]
+        [SlashCommand("aniversario", "Define seu aniversário", true, Interactions.RunMode.Async)]
         public async Task CommandExecuted(short day, short month)
         {
             if (!isValidDayAndMonth(day, month))
@@ -40,9 +32,79 @@ namespace Discord.Commands
                 return;
             }
 
+            await DeferAsync(ephemeral: true);
+
+            // TODO: maybe check here if birthday can be changed?
             ulong userId = base.Context.User.Id;
-            this.Day = day;
-            this.Month = month;
+
+            if (SetBirthdayInteractions.ContainsKey(userId))
+            {
+                // ignore the interaction
+                await DeferAsync(true);
+                return;
+            }
+
+            SetBirthdayInteraction interaction = new()
+            {
+                Day = day,
+                Month = month
+            };
+
+            if (SetBirthdayInteractions.TryGetValue(userId, out ConcurrentDictionary<Guid, SetBirthdayInteraction>? userInteractions))
+            {
+                if (!userInteractions.TryAdd(interaction.Guid, interaction))
+                {
+                    await DeferAsync(true);
+                    return;
+                }
+            } else
+            {
+                userInteractions = new ConcurrentDictionary<Guid, SetBirthdayInteraction>();
+                userInteractions.TryAdd(interaction.Guid, interaction);
+
+                if (!SetBirthdayInteractions.TryAdd(userId, userInteractions))
+                {
+                    await DeferAsync(true);
+                    return;
+                }
+            }
+
+            await RespondConfirmationMessage(interaction);
+            
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(30));
+
+                if (!SetBirthdayInteractions.TryGetValue(userId, out var userInteractions)) return;
+
+                userInteractions.TryRemove(interaction.Guid, out _);
+                if (userInteractions.IsEmpty) SetBirthdayInteractions.TryRemove(userId, out _);
+            });
+
+            return;
+        }
+
+        [ComponentInteraction("setbirthday_button_*_*")]
+        public async Task ConfirmButtonInteraction(ulong userId, string Guid)
+        {
+            if (this.Context.User.Id != userId)
+            {
+                await DeferAsync(true);
+                return;
+            }
+ 
+            if (!SetBirthdayInteractions.TryGetValue(userId, out var userInteractions))
+            {
+                await DeferAsync(true);
+                return;
+            }
+
+            Guid interactionId = new(Guid); // only respond the same message
+            if (!userInteractions.TryGetValue(interactionId, out var interaction) || interaction.Guid != interactionId)
+            {
+                await DeferAsync(true);
+                return;
+            }
 
             var scope = this._serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<MarchDbContext>();
@@ -50,29 +112,49 @@ namespace Discord.Commands
             UserEntity? userEntity = await dbContext.Users.FindAsync(userId);
             if (userEntity == null)
             {
-                userEntity = await _userBirthdayService.CreateUser(userId, (short)day, (short)month);
-
-                await RespondBirthdayDefined();
-            } else
-            {
-                var (entity, result) = await _userBirthdayService.UpdateBirthday(userId, (short)day, (short)month);
-
-                switch (result)
-                {
-                    case UpdateBirthdayResult.Success:
-                        await RespondBirthdayDefined();
-                        break;
-                    case UpdateBirthdayResult.UpdateLimitReached:
-                        await RespondUpdateAmountLimited();
-                        break;
-                    case UpdateBirthdayResult.CooldownActive:
-                        await RespondUpdateCooldown(entity!.birthday_updated_at); // it never returns cooldownactive if entity is null
-                        break;
-                    case UpdateBirthdayResult.UserNotFound:
-                        await RespondError();
-                        break;
-                }
+                userEntity = await _userBirthdayService.CreateUser(userId, interaction.Day, interaction.Month);
+                await RespondBirthdayDefined(interaction);
+                return;
             }
+
+            var (entity, result) = await _userBirthdayService.UpdateBirthday(userId, interaction.Day, interaction.Month);
+
+            switch (result)
+            {
+                case UpdateBirthdayResult.Success:
+                    await RespondBirthdayDefined(interaction);
+                    break;
+                case UpdateBirthdayResult.UpdateLimitReached:
+                    await RespondUpdateAmountLimited();
+                    break;
+                case UpdateBirthdayResult.CooldownActive:
+                    await RespondUpdateCooldown(entity!.birthday_updated_at); // it never returns cooldownactive if entity is null
+                    break;
+                case UpdateBirthdayResult.UserNotFound:
+                    await RespondError();
+                    break;
+            }
+        }
+
+        public async Task RespondConfirmationMessage(SetBirthdayInteraction interaction)
+        {
+            ulong userId = base.Context.User.Id;
+
+            string dayValue = interaction.Day == 1 ? "1º" : interaction.Day.ToString().PadLeft(2, '0');
+            string monthName = MonthNameInPortuguese(interaction.Month);
+
+            var embed = new EmbedBuilder()
+                .WithTitle("Definição de aniversário")
+                .WithDescription($"Tem certeza de que deseja definir seu aniversário como {dayValue} de {monthName}?")
+                .WithThumbnailUrl("https://github.com/Luucx7/temp-repo/blob/main/march-sleeping.png?raw=true")
+                .Build();
+
+            var component = new ComponentBuilder()
+                .WithButton("Confirmar", style: ButtonStyle.Success, customId: $"setbirthday_button_{userId}_{interaction.Guid:N}")
+                .WithButton("Cancelar", style: ButtonStyle.Danger, customId: $"cancelbirthday_button_{userId}_{interaction.Guid:N}")
+                .Build();
+
+            await RespondAsync(embed: embed, components: component, ephemeral: true, isTTS: false);
         }
 
         public async Task RespondInvalidDate()
@@ -86,13 +168,13 @@ namespace Discord.Commands
             await RespondAsync(embed: builder.Build());
         }
 
-        private async Task RespondBirthdayDefined()
+        private async Task RespondBirthdayDefined(SetBirthdayInteraction interaction)
         {
-            string dayValue = this.Day.GetValueOrDefault(0) == 1 ? "1º" : this.Day.GetValueOrDefault(0).ToString().PadLeft(2, '0');
-            string monthName = MonthNameInPortuguese(this.Month.GetValueOrDefault(0));
+            string dayValue = interaction.Day == 1 ? "1º" : interaction.Day.ToString().PadLeft(2, '0');
+            string monthName = MonthNameInPortuguese(interaction.Month);
 
-            short day = this.Day.GetValueOrDefault(0);
-            short month = this.Month.GetValueOrDefault(0);
+            short day = interaction.Day;
+            short month = interaction.Month;
 
             var embedMessage = new EmbedBuilder()
                 .WithColor(Color.Parse("7FFF00", ColorType.CssHexColor))
@@ -211,6 +293,12 @@ namespace Discord.Commands
                 _ => throw new ArgumentOutOfRangeException(nameof(month), "Mês inválido.")
             };
         }
+    }
 
+    public class SetBirthdayInteraction()
+    {
+        public Guid Guid { get; private set; } = Guid.NewGuid();
+        public required short Day { get; set; }
+        public required short Month { get; set; }
     }
 }
